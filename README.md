@@ -2,7 +2,7 @@
 During the playbook execution target server(s) will be rebooted, it means a prior downtime should be scheduled.  
 
 ## Vault secret
-`group_vars/all/secrets.yml`
+`group_vars/all/secrets.yml`  
 https://eu.onetimesecret.com/secret/1foa0ohutb04ww16nnj6p0sz0aw5sjw
 
 ## Run the Playbook
