@@ -1,0 +1,29 @@
+---
+- name: Ensure cpupower is installed
+  apt:
+    name: linux-tools-common
+    state: present
+
+- name: Backup current GRUB configuration
+  copy:
+    src: /etc/default/grub
+    dest: /etc/default/grub.bak
+
+- name: Disable CPU C-state
+  lineinfile:
+    path: /etc/default/grub
+    regexp: '^GRUB_CMDLINE_LINUX_DEFAULT='
+    line: 'GRUB_CMDLINE_LINUX_DEFAULT="intel_idle.max_cstate=0 processor.max_cstate=0"'
+
+- name: Update GRUB configuration
+  command: update-grub
+  notify:
+    - Reboot the server
+
+- name: Set CPU to performance mode
+  shell: |
+    for cpu in /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor; do
+      echo performance > $cpu;
+    done
+  args:
+    warn: false

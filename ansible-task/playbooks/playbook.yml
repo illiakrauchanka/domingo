@@ -1,0 +1,15 @@
+---
+- name: Prepare server for operation
+  hosts: all
+  gather_facts: yes
+  become: yes
+  vars_files:
+    - group_vars/all/secrets.yml # Contains vault_luks_passphrase
+  tasks:
+    - name: Include os_preparation role
+      include_role:
+        name: os_preparation
+      vars:
+        second_disk_partition: "/dev/xvdb"
+        adjacent_partition: "/dev/xvdb1"
+        luks_passphrase: "{{ vault_luks_passphrase }}"

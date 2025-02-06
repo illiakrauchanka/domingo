@@ -1,0 +1,69 @@
+- name: Get the active non-localhost interface
+  shell: |
+    ip -o link show | awk -F': ' '{print $2}' | grep -v '^lo' | while read iface; do
+      state=$(cat /sys/class/net/$iface/operstate)
+      if [ "$state" = "up" ]; then
+        echo $iface
+        break
+      fi
+    done
+  register: active_interface
+  changed_when: false
+
+- name: Fail if no active interface is found
+  fail:
+    msg: "No active interfaces found to rename!"
+  when: active_interface.stdout == ""
+
+- name: Find the Netplan configuration file
+  shell: ls /etc/netplan/*.yaml
+  register: netplan_files
+  changed_when: false
+  check_mode: no
+
+- name: Display detected Netplan files
+  debug:
+    msg: "Found Netplan files: {{ netplan_files.stdout_lines }}"
+
+- name: Fail if multiple Netplan configuration files are found
+  fail:
+    msg: "Multiple Netplan configuration files exist! Please manually specify the correct one."
+  when: netplan_files.stdout_lines | length > 1
+
+- name: Fail if there is no Netplan configuration file
+  fail:
+    msg: "No Netplan configuration file found in /etc/netplan"
+  when: netplan_files.stdout == ""
+
+- name: Extract Netplan configuration file
+  set_fact:
+    netplan_file: "{{ netplan_files.stdout_lines[0] }}"
+
+- name: Generate a timestamp for the backup
+  shell: date +"%Y%m%d%H%M%S"
+  register: timestamp
+  changed_when: false
+
+- name: Backup Netplan configuration
+  copy:
+    src: "{{ netplan_file }}"
+    dest: "{{ netplan_file }}.bak_{{ timestamp.stdout }}"
+    remote_src: yes
+
+- name: Replace interface name with net0 in Netplan configuration
+  replace:
+    path: "/etc/netplan/50-cloud-init.yaml"
+    regexp: '\benX0\b'
+    replace: 'net0'
+
+- name: Apply the updated Netplan configuration
+  command: netplan apply
+
+- name: Show information about renamed interface
+  command: ip addr show enX0
+  register: updated_interface
+  when: active_interface.stdout != ""
+
+- name: Display updated inteface
+  debug:
+    msg: "Active interface {{ updated_interface }}"  

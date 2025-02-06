@@ -1,0 +1,21 @@
+---
+- name: Check if the system is Ubuntu
+  block:
+    - name: Fail if the system is not Ubuntu
+      fail:
+        msg: "This playbook is only supported on Ubuntu systems. Detected OS: {{ ansible_facts['distribution'] }} {{ ansible_facts['distribution_version'] }}"
+      when: ansible_facts['distribution'] != 'Ubuntu'
+  rescue:
+    - name: Handle missing distribution fact
+      fail:
+        msg: "Unable to determine the OS distribution. Fact gathering might be disabled or unsupported."
+
+- name: Include disk encryption tasks
+  include_tasks: 01_encrypt_disk.yml
+  when: disk_to_encrypt is defined
+
+- name: Include CPU settings tasks
+  include_tasks: 02_cpu_settings.yml
+
+- name: Include network interface renaming tasks
+  include_tasks: 03_network_rename.yml

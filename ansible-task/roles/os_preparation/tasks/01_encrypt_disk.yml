@@ -1,0 +1,54 @@
+---
+# ===== Encrypt the second disk partition =====
+- name: Check if the second disk partition exists
+  stat:
+    path: "{{ second_disk_partition }}"
+  register: second_disk_stat
+
+- name: Fail if the second disk partition does not exist
+  fail:
+    msg: "The second disk partition {{ second_disk_partition }} does not exist!"
+  when: not second_disk_stat.stat.exists
+
+- name: Encrypt the second disk partition with LUKS
+  command: >
+    cryptsetup luksFormat {{ second_disk_partition }}
+    --batch-mode --key-file <(echo "{{ luks_passphrase }}")
+  args:
+    warn: false
+  when: second_disk_stat.stat.exists
+
+- name: Open the encrypted second disk partition
+  command: >
+    cryptsetup open {{ second_disk_partition }} second_disk_crypt
+    --key-file <(echo "{{ luks_passphrase }}")
+  args:
+    warn: false
+  when: second_disk_stat.stat.exists
+
+# ===== Encrypt the partition adjacent to the root partition =====
+- name: Check if the adjacent partition exists
+  stat:
+    path: "{{ adjacent_partition }}"
+  register: adjacent_partition_stat
+
+- name: Fail if the adjacent partition does not exist
+  fail:
+    msg: "The adjacent partition {{ adjacent_partition }} does not exist!"
+  when: not adjacent_partition_stat.stat.exists
+
+- name: Encrypt the adjacent partition with LUKS
+  command: >
+    cryptsetup luksFormat {{ adjacent_partition }}
+    --batch-mode --key-file <(echo "{{ luks_passphrase }}")
+  args:
+    warn: false
+  when: adjacent_partition_stat.stat.exists
+
+- name: Open the encrypted adjacent partition
+  command: >
+    cryptsetup open {{ adjacent_partition }} adjacent_disk_crypt
+    --key-file <(echo "{{ luks_passphrase }}")
+  args:
+    warn: false
+  when: adjacent_partition_stat.stat.exists
