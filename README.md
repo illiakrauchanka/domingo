@@ -1,6 +1,9 @@
 ## Warning
 During the playbook execution target server(s) will be rebooted, it means a prior downtime should be scheduled.  
 
+## Vault secret
+https://eu.onetimesecret.com/secret/1foa0ohutb04ww16nnj6p0sz0aw5sjw
+
 ## Run the Playbook
 ansible-playbook playbooks/playbook.yml -i inventory/production --ask-vault-pass
 
